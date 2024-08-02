@@ -1,0 +1,24 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 25.0.1706.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "office", "office.csproj", "{5B3984FE-8CF1-455B-96C9-B2255D8B3AED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5B3984FE-8CF1-455B-96C9-B2255D8B3AED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B3984FE-8CF1-455B-96C9-B2255D8B3AED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B3984FE-8CF1-455B-96C9-B2255D8B3AED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B3984FE-8CF1-455B-96C9-B2255D8B3AED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0C8874B2-4BDC-4A4C-B718-455F6C44F1A9}
+	EndGlobalSection
+EndGlobal

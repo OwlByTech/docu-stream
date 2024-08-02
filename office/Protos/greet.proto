@@ -1,0 +1,19 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "office";
+
+package word;
+
+service Word { rpc Apply(WordApplyReq) returns (WordApplyRes); }
+
+message DocuStringValues {
+  string key = 1;
+  string value = 2;
+}
+
+message WordApplyReq {
+  repeated DocuStringValues body = 1;
+  repeated DocuStringValues header = 2;
+}
+
+message WordApplyRes {}
