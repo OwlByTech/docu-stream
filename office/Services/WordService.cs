@@ -23,8 +23,8 @@ public class WordService : Word.WordBase
         foreach (var text in textElements)
         {
             foreach (var stringValue in stringValues)
-            {
-                var regexPattern = new Regex(@"\{\{\s*" + Regex.Escape(stringValue.Key) + @"\s*\}\}", RegexOptions.Compiled);
+            { 
+                var regexPattern = new Regex(@"\{\{\s*\b" + Regex.Escape(stringValue.Key) + @"\b\s*\}\}", RegexOptions.Compiled);
                 text.Text = regexPattern.Replace(text.Text, match => stringValue.Value);
             }
         }
@@ -101,7 +101,7 @@ public class WordService : Word.WordBase
             {
                 var header = headerPart.Header;
                 if (header == null) { continue; }
-                replaceStringValues(header.Elements<Paragraph>(), bodyValues);
+                replaceStringValues(header.Elements<Paragraph>(), headerValues);
             }
 
             Body? body = document.Body;
@@ -110,7 +110,7 @@ public class WordService : Word.WordBase
                 throw new RpcException(new Status(StatusCode.NotFound, "body required."));
             }
 
-            replaceStringValues(body.Elements<Paragraph>(), headerValues);
+            replaceStringValues(body.Elements<Paragraph>(), bodyValues);
 
             document.Save();
         }
