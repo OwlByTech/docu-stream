@@ -12,8 +12,11 @@ message DocuStringValues {
 }
 
 message WordApplyReq {
-  repeated DocuStringValues body = 1;
-  repeated DocuStringValues header = 2;
+  bytes doc = 1;
+  repeated DocuStringValues body = 2;
+  repeated DocuStringValues header = 3;
 }
 
-message WordApplyRes {}
+message WordApplyRes {
+  bytes doc = 1;
+}
