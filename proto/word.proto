@@ -5,16 +5,24 @@ option go_package = "proto/";
 
 package word;
 
-service Word { rpc Apply(WordApplyReq) returns (WordApplyRes); }
+service Word { rpc Apply(stream WordApplyReq) returns (stream WordApplyRes); }
 
-message DocuStringValues {
+message DocuChunk { bytes chunk = 1; }
+message DocuValues {
   string key = 1;
   string value = 2;
 }
 
-message WordApplyReq {
-  repeated DocuStringValues body = 2;
-  repeated DocuStringValues header = 3;
+message DocuWord {
+  repeated DocuValues body = 1;
+  repeated DocuValues header = 2;
 }
 
-message WordApplyRes {}
+message WordApplyReq {
+  oneof request {
+    DocuWord word = 1;
+    DocuChunk docu = 2;
+  }
+}
+
+message WordApplyRes { DocuChunk docu = 1; }
