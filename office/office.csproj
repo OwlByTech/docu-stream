@@ -9,7 +9,7 @@
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'https' " />
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'http' " />
   <ItemGroup>
-    <Protobuf Include="Protos/word.proto" GrpcServices="Server" />
+    <Protobuf Include="../proto/word.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>

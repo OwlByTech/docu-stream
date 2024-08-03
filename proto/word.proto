@@ -1,6 +1,7 @@
 ﻿syntax = "proto3";
 
 option csharp_namespace = "office";
+option go_package = "internal/proto";
 
 package word;
 
@@ -12,11 +13,8 @@ message DocuStringValues {
 }
 
 message WordApplyReq {
-  bytes doc = 1;
   repeated DocuStringValues body = 2;
   repeated DocuStringValues header = 3;
 }
 
-message WordApplyRes {
-  bytes doc = 1;
-}
+message WordApplyRes {}
