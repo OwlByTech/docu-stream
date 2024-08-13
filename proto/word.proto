@@ -23,6 +23,7 @@ message DocuValue {
 message DocuWord {
   repeated DocuValue body = 1;
   repeated DocuValue header = 2;
+  repeated DocuValue footer = 3;
 }
 
 message WordApplyReq {

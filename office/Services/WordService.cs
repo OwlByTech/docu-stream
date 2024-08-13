@@ -76,6 +76,7 @@ public class WordService : Word.WordBase
     {
         var bodyValues = new List<DocuValue>();
         var headerValues = new List<DocuValue>();
+        var footerValues = new List<DocuValue>();
         List<MemoryStream> attachFiles = new List<MemoryStream>();
 
         await foreach (var req in reqStream.ReadAllAsync())
@@ -85,6 +86,7 @@ public class WordService : Word.WordBase
                 case WordApplyReq.RequestOneofCase.Word:
                     bodyValues.AddRange(req.Word.Body);
                     headerValues.AddRange(req.Word.Header);
+                    footerValues.AddRange(req.Word.Footer);
                     break;
 
                 case WordApplyReq.RequestOneofCase.Docu:
@@ -174,6 +176,19 @@ public class WordService : Word.WordBase
             var bodyImages = bodyValues.Where(b => b.Type == DocuValueType.Image);
             replaceTextValues(body.Elements<Paragraph>(), bodyTexts);
             replaceImageValues(body.Descendants<Drawing>(), mainDocumentPart, bodyImages, attachFiles);
+
+
+            var footerImages = footerValues.Where(h => h.Type == DocuValueType.Image);
+            var footerTexts = footerValues.Where(h => h.Type == DocuValueType.Text);
+
+            foreach (var footerPart in mainDocumentPart.FooterParts)
+            {
+                var header = footerPart.Footer;
+                if (header == null) { continue; }
+
+                replaceTextValues(header.Elements<Paragraph>(), footerTexts);
+                replaceImageValues(footerPart.Footer.Descendants<Drawing>(), footerPart, footerImages, attachFiles);
+            }
 
             document.Save();
         }
