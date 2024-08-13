@@ -7,15 +7,22 @@ package word;
 
 service Word { rpc Apply(stream WordApplyReq) returns (stream WordApplyRes); }
 
-message DocuChunk { bytes chunk = 1; }
-message DocuValues {
-  string key = 1;
-  string value = 2;
+enum DocuValueType {
+  TEXT = 0;
+  IMAGE = 1;
+}
+
+message DocuChunk { repeated bytes chunks = 1; }
+
+message DocuValue {
+  DocuValueType type = 1;
+  string key = 2;
+  string value = 3;
 }
 
 message DocuWord {
-  repeated DocuValues body = 1;
-  repeated DocuValues header = 2;
+  repeated DocuValue body = 1;
+  repeated DocuValue header = 2;
 }
 
 message WordApplyReq {
