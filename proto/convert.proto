@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package convert;
+option go_package="convert/proto";
+
+import "word.proto";
+
+service Convert {
+  rpc WordToPdf(stream WordToPdfReq) returns (stream WordToPdfRes);
+}
+
+message WordToPdfReq {
+  word.DocuChunk docu = 1;
+}
+
+message WordToPdfRes {
+  word.DocuChunk docu = 1;
+}
