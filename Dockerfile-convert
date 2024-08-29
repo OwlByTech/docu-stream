@@ -1,0 +1,27 @@
+FROM rust:alpine AS builder
+
+WORKDIR /app
+
+RUN apk update && \
+    apk add --no-cache \
+    openssl-dev \
+    musl-dev \
+    protoc \
+    protobuf-dev
+
+COPY convert .
+COPY proto /proto
+
+RUN cargo build --release
+
+FROM alpine:latest
+
+RUN apk add --no-cache \
+    libreoffice \
+    openjdk17-jre \
+    openssl \
+    musl
+
+COPY --from=builder /app/target/release/convert /usr/local/bin/convert
+
+ENTRYPOINT ["/usr/local/bin/convert"]

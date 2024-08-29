@@ -1,6 +1,8 @@
 use std::fs::{remove_file, File};
 use std::io::{self, Read, Write};
+use std::path::Path;
 use std::pin::Pin;
+use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
@@ -67,9 +69,16 @@ impl Convert for ConvertService {
             }
         }
 
+        let pdf_path = format!("output_{}.pdf", timestamp);
+        if let Err(e) = convert_to_pdf(&input_file_path, &pdf_path).await {
+            eprintln!("Error converting file: {:?}", e);
+            let _ = remove_file(&input_file_path);
+            return Err(Status::internal("Error converting file to PDF"));
+        }
+
         drop(file);
 
-        let mut file = match File::open(&input_file_path) {
+        let mut file = match File::open(&pdf_path) {
             Ok(f) => f,
             Err(e) => {
                 eprintln!("Error opening file for reading: {:?}", e);
@@ -78,6 +87,7 @@ impl Convert for ConvertService {
             }
         };
 
+        let _ = remove_file(&input_file_path);
         let (tx, rx) = mpsc::channel(1);
 
         tokio::spawn(async move {
@@ -108,7 +118,7 @@ impl Convert for ConvertService {
             }
 
             drop(tx);
-            let _ = remove_file(&input_file_path);
+            let _ = remove_file(&pdf_path);
         });
 
         Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
@@ -119,6 +129,31 @@ async fn save_chunk_to_file(file: &mut File, chunks: &[Vec<u8>]) -> io::Result<(
     for chunk in chunks {
         file.write_all(&chunk)?;
     }
+    Ok(())
+}
+
+async fn convert_to_pdf(input_path: &str, output_path: &str) -> io::Result<()> {
+    let status = Command::new("libreoffice")
+        .arg("--headless")
+        .arg("--convert-to")
+        .arg("pdf")
+        .arg(input_path)
+        .arg("--outdir")
+        .arg(".")
+        .status()?;
+
+    if !status.success() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "LibreOffice conversion failed",
+        ));
+    }
+
+    let pdf_output = input_path.replace(".docx", ".pdf");
+    if Path::new(&pdf_output).exists() {
+        std::fs::rename(&pdf_output, &output_path)?;
+    }
+
     Ok(())
 }
 
