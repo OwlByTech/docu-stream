@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package convert;
-option go_package="convert/proto";
+option go_package = "proto/";
 
 import "word.proto";
 

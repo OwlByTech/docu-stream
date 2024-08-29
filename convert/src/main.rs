@@ -1,4 +1,9 @@
+use std::fs::{remove_file, File};
+use std::io::{self, Read, Write};
 use std::pin::Pin;
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::{Stream, StreamExt};
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 
@@ -28,35 +33,93 @@ impl Convert for ConvertService {
         req: Request<Streaming<WordToPdfReq>>,
     ) -> ConvertResult<Self::WordToPdfStream> {
         let mut stream = req.into_inner();
-        let mut chunks = Vec::new();
+
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_secs();
+        let input_file_path = format!("input_{}.docx", timestamp);
+
+        let mut file = match File::create(&input_file_path) {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Error creating file: {:?}", e);
+                return Err(Status::internal("Error creating file"));
+            }
+        };
 
         while let Some(message) = stream.next().await {
             match message {
                 Ok(req) => {
-                    // Collect the chunks from each request
                     if let Some(docu_chunk) = req.docu {
-                        chunks.extend(docu_chunk.chunks);
+                        if let Err(e) = save_chunk_to_file(&mut file, &docu_chunk.chunks).await {
+                            eprintln!("Error saving chunk to file: {:?}", e);
+                            let _ = remove_file(&input_file_path);
+                            return Err(Status::internal("Error saving file"));
+                        }
                     }
                 }
                 Err(e) => {
                     eprintln!("Error while receiving request: {:?}", e);
+                    let _ = remove_file(&input_file_path);
                     return Err(Status::internal("Error uploading stream"));
                 }
             }
         }
 
-        // TODO: save the file and the process with libreoffice command
+        drop(file);
 
-        let response = WordToPdfRes {
-            docu: Some(word::DocuChunk { chunks }),
+        let mut file = match File::open(&input_file_path) {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Error opening file for reading: {:?}", e);
+                let _ = remove_file(&input_file_path);
+                return Err(Status::internal("Error opening file for reading"));
+            }
         };
 
-        let response_stream = tokio_stream::iter(vec![Ok(response)]);
+        let (tx, rx) = mpsc::channel(1);
 
-        Ok(Response::new(
-            Box::pin(response_stream) as Self::WordToPdfStream
-        ))
+        tokio::spawn(async move {
+            let mut buffer = [0; 1024];
+            loop {
+                match file.read(&mut buffer) {
+                    Ok(bytes_read) if bytes_read > 0 => {
+                        let chunk = buffer[..bytes_read].to_vec();
+                        let response = WordToPdfRes {
+                            docu: Some(word::DocuChunk {
+                                chunks: vec![chunk],
+                            }),
+                        };
+
+                        if tx.send(Ok(response)).await.is_err() {
+                            eprintln!("Failed to send response chunk");
+                            break;
+                        }
+                    }
+                    Ok(_) => {
+                        break;
+                    }
+                    Err(e) => {
+                        eprintln!("Error reading file: {:?}", e);
+                        break;
+                    }
+                }
+            }
+
+            drop(tx);
+            let _ = remove_file(&input_file_path);
+        });
+
+        Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
     }
+}
+
+async fn save_chunk_to_file(file: &mut File, chunks: &[Vec<u8>]) -> io::Result<()> {
+    for chunk in chunks {
+        file.write_all(&chunk)?;
+    }
+    Ok(())
 }
 
 #[tokio::main]
