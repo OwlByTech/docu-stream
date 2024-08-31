@@ -73,21 +73,21 @@ impl Convert for ConvertService {
         if let Err(e) = convert_to_pdf(&input_file_path, &pdf_path).await {
             eprintln!("Error converting file: {:?}", e);
             let _ = remove_file(&input_file_path);
+            let _ = remove_file(&pdf_path);
             return Err(Status::internal("Error converting file to PDF"));
         }
 
-        drop(file);
+        let _ = remove_file(&input_file_path);
 
         let mut file = match File::open(&pdf_path) {
             Ok(f) => f,
             Err(e) => {
                 eprintln!("Error opening file for reading: {:?}", e);
-                let _ = remove_file(&input_file_path);
+                let _ = remove_file(&pdf_path);
                 return Err(Status::internal("Error opening file for reading"));
             }
         };
 
-        let _ = remove_file(&input_file_path);
         let (tx, rx) = mpsc::channel(1);
 
         tokio::spawn(async move {
@@ -117,7 +117,6 @@ impl Convert for ConvertService {
                 }
             }
 
-            drop(tx);
             let _ = remove_file(&pdf_path);
         });
 
@@ -133,14 +132,16 @@ async fn save_chunk_to_file(file: &mut File, chunks: &[Vec<u8>]) -> io::Result<(
 }
 
 async fn convert_to_pdf(input_path: &str, output_path: &str) -> io::Result<()> {
-    let status = Command::new("libreoffice")
+    let mut child = Command::new("libreoffice")
         .arg("--headless")
         .arg("--convert-to")
         .arg("pdf")
         .arg(input_path)
         .arg("--outdir")
         .arg(".")
-        .status()?;
+        .spawn()?;
+
+    let status = child.wait()?;
 
     if !status.success() {
         return Err(io::Error::new(
